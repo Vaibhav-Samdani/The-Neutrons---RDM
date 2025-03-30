@@ -54,6 +54,20 @@ function App() {
   const riskdata = data?.riskdata;
   const [inputValue, setInputValue] = useState("");
   const [position,setPosition] = useState([26.9154576,75.8189817]);
+  const [news,setNews] = useState([])
+
+
+  useEffect(()=>{
+    const url = `http://127.0.0.1:5000/api/news`;
+
+    axios
+      .get(url)
+      .then((response) => {
+        setNews(response.data);
+        console.log(response.data);
+       })
+      .catch((error) => console.error("Error fetching data:", error));
+  },[])
 
   if (loading) {
     return (
@@ -307,7 +321,7 @@ function App() {
                 responsive: true,
                 plugins: {
                   legend: {
-                    position: "top" as const,
+                    position: "top",
                   },
                   title: {
                     display: true,
@@ -358,29 +372,32 @@ function App() {
             </div>
 
             {/* AQI Box */}
-            <div className="p-4 bg-white rounded-lg shadow">
+            {/* <div className="p-4 bg-white rounded-lg shadow">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-bold">Air Quality Index</h3>
                 <Wind className="w-5 h-5 text-blue-500" />
               </div>
               <div className="text-2xl font-bold text-green-500">65</div>
               <div className="text-sm text-gray-500">Moderate</div>
-            </div>
+            </div> */}
 
             {/* Recent News */}
             <div className="p-4 bg-white rounded-lg shadow">
               <h3 className="mb-3 font-bold">Recent Disaster News</h3>
               <div className="space-y-3">
-                {[1, 2, 3].map((item) => (
+                {news?.map((item) => (
                   <div
                     key={item}
                     className="pb-2 border-b last:border-b-0 last:pb-0"
                   >
-                    <h4 className="font-semibold">Earthquake Update {item}</h4>
+                    <a target="_blank" className="underline hover:text-blue-600" href={item.link}>
+                    <h4 className="font-semibold">{item?.title}</h4>
                     <p className="text-sm text-gray-600">
                       Latest updates on seismic activity...
                     </p>
-                    <span className="text-xs text-gray-400">2 hours ago</span>
+                      
+                    </a>
+                    
                   </div>
                 ))}
               </div>
