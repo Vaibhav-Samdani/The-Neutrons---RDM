@@ -124,6 +124,97 @@ def fetch_earthquake_data(lat, lng, maxRadiusKm=100):
 
 
 
+# --------------------------- news scrapper -----------------------------------
+
+import requests
+import re
+from datetime import datetime
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut
+
+API_KEY = 'pub_7703057407b77e7247aa8d824037a4426c39b'
+geolocator = Nominatim(user_agent="disaster-news-locator")
+
+DISASTER_KEYWORDS = [
+    'flood', 'earthquake', 'cyclone', 'tsunami', 'landslide', 'storm',
+    'wildfire', 'heatwave', 'lightning', 'avalanche', 'drought',
+    'monsoon', 'cloudburst'
+]
+
+SEVERITY_WORDS = [
+    'killed', 'dead', 'death', 'rescue', 'damage', 'destroyed', 'evacuated', 'injured', 'missing', 'survivor'
+]
+
+
+
+
+def compute_relevance(text):
+    text = text.lower()
+    score = sum(text.count(word) for word in SEVERITY_WORDS)
+    return score
+
+# Try to extract disaster type
+def detect_disaster_type(text):
+    for keyword in DISASTER_KEYWORDS:
+        if keyword in text.lower():
+            return keyword
+    return None
+
+# Attempt to extract city or region from title
+def extract_location(text):
+    match = re.search(r'in ([A-Za-z\s]+)', text)
+    return match.group(1).strip() if match else None
+
+# Convert location to lat/lon
+def get_coordinates(place):
+    try:
+        location = geolocator.geocode(place, timeout=5)
+        if location:
+            return (location.latitude, location.longitude)
+    except GeocoderTimedOut:
+        pass
+    return (None, None)
+
+def fetch_disaster_news():
+    url = f'https://newsdata.io/api/1/news?apikey={API_KEY}&language=en&q=' \
+          f'{"%20OR%20".join(DISASTER_KEYWORDS)}'
+
+    response = requests.get(url)
+    data = response.json()
+    articles = data.get("results", [])
+    result = []
+
+        
+
+    for article in articles:
+        title = article.get('title', '')
+        description = article.get('description') or ''
+        text = title + " " + description
+        disaster_type = detect_disaster_type(text)
+        relevance_score = compute_relevance(text)
+        # Filter out low relevance or irrelevant articles
+        if disaster_type is None or relevance_score == 0:
+            continue
+        place = extract_location(text)
+        lat, lon = get_coordinates(place) if place else (None, None)
+        
+        disc = {"title" : title, "link": article.get('link'), "pubDate": article.get('pubDate'), "disasterType": disaster_type}
+        
+        result.append(disc)
+            
+    return result     
+
+    
+
+
+
+@app.route("/api/news",methods=['GET'])
+def get_news():
+    result = fetch_disaster_news()
+    return jsonify(result)
+
+
+
 
 
 
@@ -140,69 +231,6 @@ def send_data():
     sendData["city"]= city
     return jsonify(sendData)
 
-@app.route('/', methods=['GET'])
-def data():
-    return jsonify({
-"city": "Mandalay,Myanmar",
-"coordinates": {
-"latitude": 21.9596834,
-"longitude": 96.0948743
-},
-"earthquakedata": {
-"magnitude": 4.6,
-"place": "12 km WNW of Mandalay, Burma (Myanmar)",
-"time": 1743164516553
-},
-"riskdata": [
-{
-"date": "30/03/2025",
-"floodRisk": 1,
-"heavyRainRisk": 1,
-"rainAmount": 0,
-"tsunamiRisk": 1
-},
-{
-"date": "31/03/2025",
-"floodRisk": 1,
-"heavyRainRisk": 1,
-"rainAmount": 0,
-"tsunamiRisk": 1
-},
-{
-"date": "01/04/2025",
-"floodRisk": 1,
-"heavyRainRisk": 1,
-"rainAmount": 0,
-"tsunamiRisk": 1
-}
-],
-"weatherdata": [
-{
-"date": "30/03/2025",
-"humidity": 20,
-"rainrate": 0,
-"temperature": 33.4,
-"weather": "Sunny",
-"windspeed": 21.2
-},
-{
-"date": "31/03/2025",
-"humidity": 22,
-"rainrate": 0,
-"temperature": 33.6,
-"weather": "Sunny",
-"windspeed": 20.9
-},
-{
-"date": "01/04/2025",
-"humidity": 23,
-"rainrate": 0,
-"temperature": 33.2,
-"weather": "Sunny",
-"windspeed": 19.8
-}
-]
-})
 
 if __name__ == '__main__':
     app.run(debug=True)
