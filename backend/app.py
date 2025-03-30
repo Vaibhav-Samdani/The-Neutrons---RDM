@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import requests
 from datetime import datetime
 from flask_cors import CORS
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -96,13 +97,15 @@ def fetch_data(location_name = city):
         return {"status": "error", "message": str(e)}
 
 def displayEarthquakeData(data):
+    result = []
     if(len(data["features"]) == 0 ):
         return {"error": "No data found"}
     for eq in data['features']:
          place = eq['properties']["place"]
          mag = eq['properties']["mag"]
          time  = eq['properties']["time"]
-         return {"place": place,"magnitude": mag,"time": time,}
+         result.append({"place": place,"magnitude": mag,"time": time,})
+    return result
 
 def fetch_earthquake_data(lat, lng, maxRadiusKm=100):
     url = f"https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude={lat}&longitude={lng}&maxradiuskm={maxRadiusKm}"
@@ -222,7 +225,7 @@ def get_news():
 @app.route('/api/data', methods=['GET'])
 def send_data():
     # Get the 'name' parameter from the request
-    city = request.args.get('city', 'Manipal') 
+    city = request.args.get('city', 'Myanmar') 
     # Return JSON response
     coordinates = get_lat_lon(city)
     fetch_data(city)

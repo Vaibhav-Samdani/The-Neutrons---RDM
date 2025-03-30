@@ -491,25 +491,30 @@ const EarthquakeBox = ({ earthquakeData }) => {
   }
   return (
     <>
+    {earthquakeData?.map((earthquake)=> (
+      <>
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <div className="text-gray-600">Magnitude</div>
-          <div className="text-2xl font-bold text-red-600">
-            {earthquakeData?.magnitude}
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="text-gray-600">Time</div>
-          <div className="font-semibold">{earthquakeData?.time}</div>
+      <div className="space-y-2">
+        <div className="text-gray-600">Magnitude</div>
+        <div className="text-2xl font-bold text-red-600">
+          {earthquake?.magnitude}
         </div>
       </div>
-      <div className="mt-4">
-        <div className="text-gray-600">Location</div>
-        <div className="flex items-center mt-1 font-semibold">
-          <MapPin className="w-5 h-5 mr-2 text-gray-500" />
-          {earthquakeData?.place}
-        </div>
+      <div className="space-y-2">
+        <div className="text-gray-600">Time</div>
+        <div className="font-semibold">{earthquake?.time}</div>
       </div>
+    </div>
+    <div className="mt-4">
+      <div className="text-gray-600">Location</div>
+      <div className="flex items-center mt-1 mb-10 font-semibold">
+        <MapPin className="w-5 h-5 mr-2 text-gray-500" />
+        {earthquake?.place}
+      </div>
+    </div>
+    </>
+    ))}
+      
     </>
   );
 };
